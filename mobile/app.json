@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "YY IM",
+    "slug": "yy-im",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "yyim",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#1677ff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "cloud.mizhiyun.yyim"
+    },
+    "android": {
+      "package": "cloud.mizhiyun.yyim",
+      "permissions": ["INTERNET"]
+    },
+    "extra": {
+      "apiBaseUrl": "https://api.mizhiyun.cloud"
+    }
+  }
+}
