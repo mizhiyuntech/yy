@@ -10,6 +10,7 @@ import (
 	"github.com/mizhiyuntech/yy/server/internal/database"
 	"github.com/mizhiyuntech/yy/server/internal/handlers"
 	"github.com/mizhiyuntech/yy/server/internal/server"
+	"github.com/mizhiyuntech/yy/server/internal/version"
 	"github.com/mizhiyuntech/yy/server/internal/ws"
 	"gorm.io/gorm"
 )
@@ -35,10 +36,12 @@ func main() {
 		if err != nil {
 			log.Fatalf("connect database: %v", err)
 		}
-		if err := database.Migrate(db); err != nil {
+		// Auto-upgrade the schema to the current version on startup so that
+		// new tables/fields take effect after a backend restart.
+		if _, err := database.EnsureSchemaVersion(db); err != nil {
 			log.Fatalf("migrate database: %v", err)
 		}
-		log.Println("database connected, system installed")
+		log.Printf("database connected, system installed (version %s)", version.Current)
 	} else {
 		log.Println("system not installed yet, visit the site to run the installer")
 	}

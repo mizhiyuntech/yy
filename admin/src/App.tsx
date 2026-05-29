@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard'
 import Users from './pages/Users'
 import Messages from './pages/Messages'
 import Conversations from './pages/Conversations'
+import Groups from './pages/Groups'
 
 function isAuthed() {
   return !!localStorage.getItem('yy_admin_token')
@@ -57,6 +58,7 @@ function Bootstrap() {
       >
         <Route index element={<Dashboard />} />
         <Route path="users" element={<Users />} />
+        <Route path="groups" element={<Groups />} />
         <Route path="messages" element={<Messages />} />
         <Route path="conversations" element={<Conversations />} />
       </Route>

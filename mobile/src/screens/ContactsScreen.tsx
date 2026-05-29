@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react'
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { Button, Toast } from '@ant-design/react-native'
+import { IconOutline } from '@ant-design/icons-react-native'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import api from '../api/client'
@@ -42,10 +43,10 @@ export default function ContactsScreen() {
     <View style={styles.container}>
       <View style={styles.actions}>
         <Button type="primary" size="small" onPress={() => navigation.navigate('AddContact')}>
-          添加好友
+          <IconOutline name="user-add" size={14} color="#fff" /> 添加好友
         </Button>
         <Button size="small" style={{ marginLeft: 8 }} onPress={() => navigation.navigate('NewGroup')}>
-          发起群聊
+          <IconOutline name="usergroup-add" size={14} color="#1677ff" /> 发起群聊
         </Button>
       </View>
       <FlatList

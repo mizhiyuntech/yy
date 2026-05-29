@@ -10,6 +10,7 @@ import (
 	"github.com/mizhiyuntech/yy/server/internal/database"
 	"github.com/mizhiyuntech/yy/server/internal/models"
 	"github.com/mizhiyuntech/yy/server/internal/utils"
+	"github.com/mizhiyuntech/yy/server/internal/version"
 )
 
 // Default admin credentials created when the installer is run without overrides.
@@ -34,6 +35,7 @@ func (a *App) InstallStatus(c *gin.Context) {
 	ok(c, gin.H{
 		"installed": a.Cfg.IsInstalled(),
 		"site_name": a.Cfg.SiteName,
+		"version":   version.Current,
 	})
 }
 
@@ -84,7 +86,7 @@ func (a *App) Install(c *gin.Context) {
 		fail(c, http.StatusBadRequest, "cannot connect to database: "+err.Error())
 		return
 	}
-	if err := database.Migrate(db); err != nil {
+	if _, err := database.EnsureSchemaVersion(db); err != nil {
 		fail(c, http.StatusInternalServerError, "migration failed: "+err.Error())
 		return
 	}

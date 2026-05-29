@@ -89,9 +89,15 @@ func registerAPI(api *gin.RouterGroup, app *handlers.App, cfg *config.Config) {
 	admin.GET("/users", app.AdminListUsers)
 	admin.POST("/users", app.AdminCreateUser)
 	admin.PUT("/users/:id/status", app.AdminUpdateUserStatus)
+	admin.POST("/users/:id/ban", app.AdminBanUser)
+	admin.POST("/users/:id/unban", app.AdminUnbanUser)
 	admin.DELETE("/users/:id", app.AdminDeleteUser)
 	admin.GET("/messages", app.AdminListMessages)
 	admin.GET("/conversations", app.AdminListConversations)
+	admin.GET("/groups", app.AdminListGroups)
+	admin.GET("/groups/:id/members", app.AdminListGroupMembers)
+	admin.DELETE("/groups/:id/members/:uid", app.AdminRemoveGroupMember)
+	admin.DELETE("/groups/:id", app.AdminDeleteGroup)
 }
 
 // mountStatic serves the admin SPA from the web directory with history-mode

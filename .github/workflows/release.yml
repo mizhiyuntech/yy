@@ -28,29 +28,38 @@ jobs:
           go-version: '1.23'
           cache-dependency-path: server/go.sum
 
-      - name: Build Linux binaries and bundle static assets
+      - name: Build Linux binaries and package web assets
         working-directory: server
         run: |
-          # The admin static assets live next to the binary in ./web.
-          rm -rf web && cp -r ../admin/dist web
+          mkdir -p dist
+          # Standalone binaries, one per architecture (no nested archives).
           for arch in amd64 arm64; do
-            out="yy-im-linux-${arch}"
-            mkdir -p "dist/${out}"
-            CGO_ENABLED=0 GOOS=linux GOARCH=${arch} go build -ldflags "-s -w" -o "dist/${out}/yy-im" .
-            cp -r web "dist/${out}/web"
-            (cd dist && tar -czf "${out}.tar.gz" "${out}")
+            CGO_ENABLED=0 GOOS=linux GOARCH=${arch} go build -ldflags "-s -w" -o "dist/yy-im-linux-${arch}" .
           done
+          # The admin static assets that live next to the binary in ./web,
+          # packaged once and shared across architectures.
+          rm -rf web && cp -r ../admin/dist web
+          zip -r dist/web.zip web
+          cp config.example.json dist/config.example.json
 
       - uses: actions/upload-artifact@v4
         with:
-          name: backend-bundles
-          path: server/dist/*.tar.gz
+          name: backend-release
+          path: |
+            server/dist/yy-im-linux-amd64
+            server/dist/yy-im-linux-arm64
+            server/dist/web.zip
+            server/dist/config.example.json
 
       - name: Attach to GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: server/dist/*.tar.gz
+          files: |
+            server/dist/yy-im-linux-amd64
+            server/dist/yy-im-linux-arm64
+            server/dist/web.zip
+            server/dist/config.example.json
 
   mobile:
     name: Build Android APK

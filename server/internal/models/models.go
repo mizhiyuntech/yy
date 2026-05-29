@@ -36,7 +36,29 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 
+	// Ban fields (V1). Banned marks the account as restricted; the optional
+	// window [BanStart, BanEnd] limits when the ban is active.
+	Banned    bool       `gorm:"default:0" json:"banned"`
+	BanReason string     `gorm:"size:255" json:"ban_reason"`
+	BanStart  *time.Time `json:"ban_start"`
+	BanEnd    *time.Time `json:"ban_end"`
+
 	Online bool `gorm:"-" json:"online"`
+}
+
+// IsBanned reports whether the account is actively banned at the given time.
+// A ban with no start is active immediately; a ban with no end never expires.
+func (u *User) IsBanned(now time.Time) bool {
+	if !u.Banned {
+		return false
+	}
+	if u.BanStart != nil && now.Before(*u.BanStart) {
+		return false
+	}
+	if u.BanEnd != nil && now.After(*u.BanEnd) {
+		return false
+	}
+	return true
 }
 
 // Friendship represents a directed contact relationship between two users.
