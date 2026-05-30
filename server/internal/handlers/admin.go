@@ -143,15 +143,23 @@ func parseBanTime(v string) (*time.Time, error) {
 	return nil, fmt.Errorf("invalid time format: %s", v)
 }
 
-// banMessage builds a human-readable rejection message for a banned account.
+// banMessage builds a human-readable (Chinese) rejection message for a banned account.
 func banMessage(u *models.User) string {
-	msg := "account banned"
-	if u.BanReason != "" {
-		msg += ": " + u.BanReason
+	const layout = "2006-01-02 15:04"
+	reason := u.BanReason
+	if reason == "" {
+		reason = "违反平台规定"
 	}
-	if u.BanEnd != nil {
-		msg += " (until " + u.BanEnd.Format("2006-01-02 15:04") + ")"
+	msg := "您的账号已被封禁，原因：" + reason
+	switch {
+	case u.BanStart != nil && u.BanEnd != nil:
+		msg += "。封禁期：" + u.BanStart.Format(layout) + " 至 " + u.BanEnd.Format(layout)
+	case u.BanEnd != nil:
+		msg += "。解封时间：" + u.BanEnd.Format(layout)
+	default:
+		msg += "。本次为永久封禁"
 	}
+	msg += "。如有疑问请联系管理员。"
 	return msg
 }
 

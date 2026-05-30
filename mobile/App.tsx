@@ -7,8 +7,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
+import { useFonts } from 'expo-font'
 import { IconOutline } from '@ant-design/icons-react-native'
 import type { OutlineGlyphMapType } from '@ant-design/icons-react-native'
+
+import Watermark from './src/components/Watermark'
 
 import { AuthProvider, useAuth } from './src/context/AuthContext'
 import LoginScreen from './src/screens/LoginScreen'
@@ -100,6 +103,21 @@ function Routes() {
 }
 
 export default function App() {
+  // @ant-design/icons-react-native renders glyphs via the "antoutline"/"antfill"
+  // fonts, which must be loaded before icons can display in Expo.
+  const [fontsLoaded] = useFonts({
+    antoutline: require('@ant-design/icons-react-native/fonts/antoutline.ttf'),
+    antfill: require('@ant-design/icons-react-native/fonts/antfill.ttf'),
+  })
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#1677ff" />
+      </View>
+    )
+  }
+
   return (
     <SafeAreaProvider>
       <AntProvider>
@@ -107,6 +125,7 @@ export default function App() {
         <AuthProvider>
           <Routes />
         </AuthProvider>
+        <Watermark />
       </AntProvider>
     </SafeAreaProvider>
   )
