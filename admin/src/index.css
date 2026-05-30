@@ -24,3 +24,16 @@ body,
   width: 420px;
   max-width: 100%;
 }
+
+/* Tighten spacing and keep wide tables usable on small/phone screens. */
+@media (max-width: 575px) {
+  .ant-layout-content {
+    margin: 8px !important;
+  }
+  .ant-card-head-title {
+    white-space: normal;
+  }
+  .ant-card-extra {
+    padding-top: 8px;
+  }
+}

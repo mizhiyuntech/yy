@@ -31,14 +31,18 @@
     └── assets/
 ```
 
-1. 从 [Releases](../../releases) 下载 `yy-im-linux-amd64.tar.gz` 并解压。
-2. 运行二进制：`./yy-im`（默认监听 `:2026`，可用环境变量 `YY_PORT` 覆盖）。
+1. 从 [Releases](../../releases) 下载对应架构的二进制（`yy-im-linux-amd64` 或 `yy-im-linux-arm64`）与 `web.zip`，解压 `web.zip` 使 `web/` 与二进制同级。
+2. 运行二进制：`./yy-im-linux-amd64`（默认监听 `:2026`，可用环境变量 `YY_PORT` 覆盖）。
 3. 浏览器访问 `http://<服务器IP或域名>:2026`，会自动进入 **快速安装页面**。
 4. 填写 MySQL 连接信息与管理员账号（默认 `admin / admin123`），点击安装。
 5. 安装完成后即可使用管理员账号登录管理后台。
 6. 移动端 App 已内置 `https://api.mizhiyun.cloud`，后端正常运行即可直接使用。
 
-> 安装信息会写入二进制同级目录的 `config.json`。删除该文件可重新触发安装流程。
+> 安装信息会写入二进制同级目录的 `config.json`（可参考 `config.example.json`）。删除该文件可重新触发安装流程。
+
+### 版本与自动升级
+
+当前应用版本为 **V1**。后端启动时会读取数据库中记录的版本号，若与当前版本不一致，会自动执行 `AutoMigrate`（新增表/字段）并将版本号更新为当前版本。因此**新增的数据表和字段只需重启后端即可生效**，无需手动迁移。
 
 ## 本地开发
 
@@ -71,7 +75,7 @@ GitHub Actions 工作流位于 `.github/workflows/`：
 
 - **`ci.yml`**：在 push / PR 时对后端 (`go vet` + `go build`)、管理后台 (`lint` + `build`)、移动端 (`typecheck`) 进行校验。
 - **`release.yml`**：在打 tag (`v*`) 或手动触发时：
-  - 构建管理后台并打包进后端 `web/`，交叉编译 Linux (amd64/arm64) 二进制，产出 `yy-im-linux-*.tar.gz`。
+  - 构建管理后台并交叉编译 Linux (amd64/arm64) 二进制，**直接产出独立资源**：`yy-im-linux-amd64`、`yy-im-linux-arm64`、`web.zip`、`config.example.json`（不再嵌套打包）。
   - 通过 `expo prebuild` + Gradle 构建 Android **APK** (`yy-im.apk`)。
   - 打 tag 时自动上传到对应 GitHub Release。
 
@@ -91,7 +95,14 @@ GitHub Actions 工作流位于 `.github/workflows/`：
 | POST | `/api/conversations/group` | 创建群聊 |
 | GET/POST | `/api/conversations/:id/messages` | 历史消息 / 发送消息 |
 | GET | `/api/ws` | WebSocket（实时消息） |
-| GET | `/api/admin/*` | 管理后台接口（需管理员） |
+| GET | `/api/admin/users` | 用户列表（支持 `keyword` 搜索） |
+| POST | `/api/admin/users/:id/ban` | 封禁用户（原因 + 可选起止时间） |
+| POST | `/api/admin/users/:id/unban` | 解封用户 |
+| GET | `/api/admin/groups` | 群聊列表 |
+| GET | `/api/admin/groups/:id/members` | 群成员列表 |
+| DELETE | `/api/admin/groups/:id/members/:uid` | 移除群成员 |
+| DELETE | `/api/admin/groups/:id` | 解散群聊 |
+| GET | `/api/admin/*` | 其余管理后台接口（需管理员） |
 
 ### WebSocket 协议
 

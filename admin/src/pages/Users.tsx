@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   Badge,
   Button,
   Card,
+  DatePicker,
   Form,
   Input,
   Modal,
@@ -12,11 +13,18 @@ import {
   Switch,
   Table,
   Tag,
+  Tooltip,
   message,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import type { Dayjs } from 'dayjs'
 import api from '../api/client'
 import type { Paged, User } from '../api/types'
+
+interface BanFormValues {
+  reason: string
+  range?: [Dayjs, Dayjs]
+}
 
 export default function Users() {
   const [data, setData] = useState<User[]>([])
@@ -28,21 +36,33 @@ export default function Users() {
   const [modalOpen, setModalOpen] = useState(false)
   const [form] = Form.useForm()
 
-  const load = () => {
-    setLoading(true)
-    api
-      .get<{ data: Paged<User> }>('/admin/users', { params: { page, size, keyword } })
-      .then((r) => {
-        setData(r.data.data.list)
-        setTotal(r.data.data.total)
-      })
-      .finally(() => setLoading(false))
-  }
+  const [banTarget, setBanTarget] = useState<User | null>(null)
+  const [banForm] = Form.useForm<BanFormValues>()
+
+  const load = useCallback(
+    (overrideKeyword?: string) => {
+      setLoading(true)
+      const kw = overrideKeyword ?? keyword
+      api
+        .get<{ data: Paged<User> }>('/admin/users', { params: { page, size, keyword: kw } })
+        .then((r) => {
+          setData(r.data.data.list)
+          setTotal(r.data.data.total)
+        })
+        .finally(() => setLoading(false))
+    },
+    [page, size, keyword],
+  )
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page])
+  }, [load])
+
+  const onSearch = (value: string) => {
+    setKeyword(value)
+    setPage(1)
+    load(value)
+  }
 
   const toggleStatus = async (u: User, checked: boolean) => {
     await api.put(`/admin/users/${u.id}/status`, { status: checked ? 1 : 0 })
@@ -56,6 +76,31 @@ export default function Users() {
     load()
   }
 
+  const unban = async (u: User) => {
+    await api.post(`/admin/users/${u.id}/unban`)
+    message.success('已解封')
+    load()
+  }
+
+  const submitBan = async () => {
+    const values = await banForm.validateFields()
+    const [start, end] = values.range ?? []
+    try {
+      await api.post(`/admin/users/${banTarget!.id}/ban`, {
+        reason: values.reason,
+        start: start ? start.toISOString() : '',
+        end: end ? end.toISOString() : '',
+      })
+      message.success('已封禁')
+      setBanTarget(null)
+      banForm.resetFields()
+      load()
+    } catch (e) {
+      const err = e as { response?: { data?: { message?: string } } }
+      message.error(err.response?.data?.message || '封禁失败')
+    }
+  }
+
   const createUser = async () => {
     const values = await form.validateFields()
     try {
@@ -64,8 +109,9 @@ export default function Users() {
       setModalOpen(false)
       form.resetFields()
       load()
-    } catch (e: any) {
-      message.error(e.response?.data?.message || '创建失败')
+    } catch (e) {
+      const err = e as { response?: { data?: { message?: string } } }
+      message.error(err.response?.data?.message || '创建失败')
     }
   }
 
@@ -92,15 +138,46 @@ export default function Users() {
       dataIndex: 'status',
       render: (v, r) => <Switch checked={v === 1} onChange={(c) => toggleStatus(r, c)} />,
     },
+    {
+      title: '封禁',
+      dataIndex: 'banned',
+      render: (v: boolean, r) =>
+        v ? (
+          <Tooltip
+            title={
+              <>
+                <div>原因：{r.ban_reason || '—'}</div>
+                <div>起：{r.ban_start ? new Date(r.ban_start).toLocaleString() : '立即'}</div>
+                <div>止：{r.ban_end ? new Date(r.ban_end).toLocaleString() : '永久'}</div>
+              </>
+            }
+          >
+            <Tag color="red">已封禁</Tag>
+          </Tooltip>
+        ) : (
+          <Tag color="green">正常</Tag>
+        ),
+    },
     { title: '注册时间', dataIndex: 'created_at', render: (v) => new Date(v).toLocaleString() },
     {
       title: '操作',
       render: (_, r) => (
-        <Popconfirm title="确认删除该用户?" onConfirm={() => remove(r)} disabled={r.role === 'admin'}>
-          <Button danger size="small" disabled={r.role === 'admin'}>
-            删除
-          </Button>
-        </Popconfirm>
+        <Space>
+          {r.banned ? (
+            <Button size="small" onClick={() => unban(r)} disabled={r.role === 'admin'}>
+              解封
+            </Button>
+          ) : (
+            <Button size="small" onClick={() => setBanTarget(r)} disabled={r.role === 'admin'}>
+              封禁
+            </Button>
+          )}
+          <Popconfirm title="确认删除该用户?" onConfirm={() => remove(r)} disabled={r.role === 'admin'}>
+            <Button danger size="small" disabled={r.role === 'admin'}>
+              删除
+            </Button>
+          </Popconfirm>
+        </Space>
       ),
     },
   ]
@@ -109,15 +186,11 @@ export default function Users() {
     <Card
       title="用户管理"
       extra={
-        <Space>
+        <Space wrap>
           <Input.Search
             placeholder="搜索账号/昵称"
             allowClear
-            onSearch={(v) => {
-              setKeyword(v)
-              setPage(1)
-              setTimeout(load, 0)
-            }}
+            onSearch={onSearch}
             style={{ width: 220 }}
           />
           <Button type="primary" onClick={() => setModalOpen(true)}>
@@ -131,6 +204,7 @@ export default function Users() {
         loading={loading}
         columns={columns}
         dataSource={data}
+        scroll={{ x: 'max-content' }}
         pagination={{ current: page, pageSize: size, total, onChange: setPage }}
       />
       <Modal title="新建用户" open={modalOpen} onOk={createUser} onCancel={() => setModalOpen(false)}>
@@ -151,6 +225,26 @@ export default function Users() {
                 { value: 'admin', label: '管理员' },
               ]}
             />
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        title={`封禁用户 ${banTarget?.username ?? ''}`}
+        open={!!banTarget}
+        onOk={submitBan}
+        onCancel={() => {
+          setBanTarget(null)
+          banForm.resetFields()
+        }}
+        okText="确认封禁"
+        okButtonProps={{ danger: true }}
+      >
+        <Form form={banForm} layout="vertical">
+          <Form.Item name="reason" label="封禁原因" rules={[{ required: true, message: '请填写封禁原因' }]}>
+            <Input.TextArea rows={3} placeholder="请输入封禁原因" />
+          </Form.Item>
+          <Form.Item name="range" label="封禁起止时间（留空表示立即且永久）">
+            <DatePicker.RangePicker showTime style={{ width: '100%' }} />
           </Form.Item>
         </Form>
       </Modal>

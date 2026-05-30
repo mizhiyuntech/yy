@@ -7,6 +7,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
+import { useFonts } from 'expo-font'
+import { IconOutline } from '@ant-design/icons-react-native'
+import type { OutlineGlyphMapType } from '@ant-design/icons-react-native'
+
+import Watermark from './src/components/Watermark'
 
 import { AuthProvider, useAuth } from './src/context/AuthContext'
 import LoginScreen from './src/screens/LoginScreen'
@@ -23,12 +28,36 @@ const RootStack = createNativeStackNavigator<RootStackParamList>()
 const AuthStack = createNativeStackNavigator<AuthStackParamList>()
 const Tab = createBottomTabNavigator()
 
+function tabIcon(name: OutlineGlyphMapType) {
+  return ({ color, size }: { color: string; size: number }) => (
+    <IconOutline name={name} color={color} size={size} />
+  )
+}
+
 function MainTabs() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: true }}>
-      <Tab.Screen name="Chats" component={ConversationsScreen} options={{ title: '消息' }} />
-      <Tab.Screen name="Contacts" component={ContactsScreen} options={{ title: '通讯录' }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: '我的' }} />
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: true,
+        tabBarActiveTintColor: '#1677ff',
+        tabBarInactiveTintColor: '#999',
+      }}
+    >
+      <Tab.Screen
+        name="Chats"
+        component={ConversationsScreen}
+        options={{ title: '消息', tabBarIcon: tabIcon('message') }}
+      />
+      <Tab.Screen
+        name="Contacts"
+        component={ContactsScreen}
+        options={{ title: '通讯录', tabBarIcon: tabIcon('contacts') }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ title: '我的', tabBarIcon: tabIcon('user') }}
+      />
     </Tab.Navigator>
   )
 }
@@ -74,6 +103,21 @@ function Routes() {
 }
 
 export default function App() {
+  // @ant-design/icons-react-native renders glyphs via the "antoutline"/"antfill"
+  // fonts, which must be loaded before icons can display in Expo.
+  const [fontsLoaded] = useFonts({
+    antoutline: require('@ant-design/icons-react-native/fonts/antoutline.ttf'),
+    antfill: require('@ant-design/icons-react-native/fonts/antfill.ttf'),
+  })
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#1677ff" />
+      </View>
+    )
+  }
+
   return (
     <SafeAreaProvider>
       <AntProvider>
@@ -81,6 +125,7 @@ export default function App() {
         <AuthProvider>
           <Routes />
         </AuthProvider>
+        <Watermark />
       </AntProvider>
     </SafeAreaProvider>
   )

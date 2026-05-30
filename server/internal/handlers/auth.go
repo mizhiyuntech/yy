@@ -90,6 +90,10 @@ func (a *App) Login(c *gin.Context) {
 		fail(c, http.StatusUnauthorized, "invalid username or password")
 		return
 	}
+	if user.IsBanned(time.Now()) {
+		fail(c, http.StatusForbidden, banMessage(&user))
+		return
+	}
 
 	token, _ := utils.GenerateToken(a.Cfg.JWTSecret, user.ID, user.Username, user.Role, tokenTTL)
 	ok(c, gin.H{"token": token, "user": user})

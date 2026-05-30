@@ -9,6 +9,20 @@ export interface User {
   status: number
   online: boolean
   created_at: string
+  banned: boolean
+  ban_reason: string
+  ban_start: string | null
+  ban_end: string | null
+}
+
+export interface Group {
+  id: number
+  type: string
+  name: string
+  owner_id: number
+  owner_name: string
+  member_count: number
+  created_at: string
 }
 
 export interface Message {

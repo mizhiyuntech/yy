@@ -1,6 +1,7 @@
 import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { Button } from '@ant-design/react-native'
+import { IconOutline } from '@ant-design/icons-react-native'
 import { useAuth } from '../context/AuthContext'
 import { API_BASE_URL } from '../config'
 
@@ -29,7 +30,7 @@ export default function ProfileScreen() {
       </View>
 
       <Button type="warning" style={styles.logout} onPress={logout}>
-        退出登录
+        <IconOutline name="logout" size={15} color="#fff" /> 退出登录
       </Button>
     </View>
   )

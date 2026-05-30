@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { IconOutline } from '@ant-design/icons-react-native'
 import api from '../api/client'
 import { chatSocket } from '../api/ws'
 import { useAuth } from '../context/AuthContext'
@@ -92,6 +93,7 @@ export default function ChatScreen({ route }: Props) {
           multiline
         />
         <TouchableOpacity style={styles.sendBtn} onPress={send}>
+          <IconOutline name="send" size={16} color="#fff" />
           <Text style={styles.sendText}>发送</Text>
         </TouchableOpacity>
       </View>
@@ -129,6 +131,14 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     fontSize: 15,
   },
-  sendBtn: { backgroundColor: '#1677ff', borderRadius: 20, paddingHorizontal: 18, paddingVertical: 10, marginLeft: 8 },
-  sendText: { color: '#fff', fontSize: 15 },
+  sendBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1677ff',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginLeft: 8,
+  },
+  sendText: { color: '#fff', fontSize: 15, marginLeft: 4 },
 })
